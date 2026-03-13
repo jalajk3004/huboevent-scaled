@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   description: "We create unforgettable concerts, nightlife experiences, and brand events that bring people together.",
 };
 
+export const viewport = {
+  width: 'device-width',
+  height: 'device-height',
+  initialScale: 1.0,
+  maximumScale: 1.0,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

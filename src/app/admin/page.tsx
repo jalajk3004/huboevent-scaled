@@ -277,8 +277,10 @@ export default function AdminPage() {
                                                 borderRadius: '20px',
                                                 fontSize: '0.75rem',
                                                 fontWeight: 600,
-                                                backgroundColor: user.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                                                color: user.status === 'confirmed' ? '#4ade80' : '#facc15'
+                                                backgroundColor: user.status === 'paid' || user.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' : 
+                                                                 user.status === 'failed' || user.status === 'cancelled' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                                                color: user.status === 'paid' || user.status === 'confirmed' ? '#4ade80' : 
+                                                       user.status === 'failed' || user.status === 'cancelled' ? '#ef4444' : '#facc15'
                                             }}>
                                                 {user.status.toUpperCase()}
                                             </span>

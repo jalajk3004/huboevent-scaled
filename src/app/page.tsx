@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
 import { Music, Calendar, MapPin, Users, Building, Video, ArrowRight, Instagram, Twitter, Facebook, ExternalLink, ShieldCheck, Mail, Smartphone, Tent } from "lucide-react";
 import styles from "./page.module.css";
+
+// Extend window interface to recognize Paytm
+declare global {
+  interface Window {
+    Paytm: any;
+  }
+}
 
 export default function Home() {
   const [ticketData, setTicketData] = useState({
@@ -21,6 +29,23 @@ export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [ticketStatus, setTicketStatus] = useState<"idle" | "success" | "error">("idle");
   const [activeEventIdx, setActiveEventIdx] = useState(1);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const paymentMsg = searchParams.get('msg');
+    
+    if (paymentStatus === 'success') {
+      setTicketStatus('success');
+      setTimeout(() => scrollToSection('tickets'), 100);
+      router.replace('/');
+    } else if (paymentStatus === 'failed' || paymentStatus === 'error') {
+      alert(`Payment failed: ${paymentMsg || 'Unknown error. Please try again.'}`);
+      setTicketStatus('error');
+      router.replace('/');
+    }
+  }, [searchParams, router]);
 
   const eventsList = [
     { title: "Neon Nights Festival", date: "Oct 15, 2026", loc: "Mumbai Arena", img: "https://images.unsplash.com/photo-1502444330042-d1a1ddf9d261?q=80&w=1200&auto=format&fit=crop" },
@@ -42,61 +67,105 @@ export default function Home() {
     setIsProcessing(true);
 
     try {
-      const amount = Math.round(TICKET_PRICES[ticketData.type]); // Removed * quantity
+      const amount = Math.round(TICKET_PRICES[ticketData.type]);
 
-      // 1. Register user as pending in DB
-      let registrationId = null;
-      try {
-        const regRes = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...ticketData, amount })
-        });
-        const regData = await regRes.json();
-        if (!regRes.ok) throw new Error(regData.message || "Registration failed");
-        registrationId = regData.id;
-      } catch (e: unknown) {
-        alert("Failed to register: " + (e instanceof Error ? e.message : String(e)));
-        setIsProcessing(false);
-        return;
-      }
-
-      // 2. Create Paytm order
+      // Create Paytm order with user data (Paytm "Payload")
       const res = await fetch('/api/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, registrationId })
+        body: JSON.stringify({ amount, ticketData })
       });
 
       const data = await res.json();
 
       if (!data.success) {
-        alert("Failed to create complete payment initiation! Please try again.");
+        alert("Failed to initiate payment initiation! Please try again.");
         setIsProcessing(false);
         return;
       }
 
-      // Build Paytm Form Submission
-      const paytmForm = document.createElement('form');
-      paytmForm.action = `https://${data.environment}/theia/api/v1/showPaymentPage?mid=${data.mid}&orderId=${data.orderId}`;
-      paytmForm.method = 'POST';
+      // JS Checkout Logic
+      const scriptUrl = `https://securestage.paytmpayments.com/merchantpgpui/checkoutjs/merchants/${data.mid}.js`;
 
-      const fields = {
-        'mid': data.mid,
-        'orderId': data.orderId,
-        'txnToken': data.txnToken,
+      const loadScript = () => {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.type = "application/javascript";
+          script.src = scriptUrl;
+          script.crossOrigin = "anonymous";
+          script.onload = () => resolve(true);
+          script.onerror = () => reject(new Error("Failed to load Paytm SDK"));
+          document.body.appendChild(script);
+        });
       };
 
-      for (const [key, value] of Object.entries(fields)) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value || '';
-        paytmForm.appendChild(input);
-      }
+      try {
+        await loadScript();
+        
+        const config = {
+          "root": "",
+          "flow": "CHECKOUT",
+          "data": {
+            "orderId": data.orderId,
+            "token": data.txnToken,
+            "tokenType": "TXN_TOKEN",
+            "amount": data.amount
+          },
+          "merchant": {
+            "mid": data.mid,
+            "redirect": true
+          },
+          "payMode": {
+            "labels": {},
+            "filter": {
+               "exclude": []
+            },
+            "order": [
+                "UPI",
+                "CARD",
+                "NB"
+            ]
+          },
+          "handler": {
+            "notifyMerchant": function (eventName: string, data: any) {
+              console.log("Paytm Notification => ", eventName, data);
+            },
+            "transactionStatus": function(statusData: any){
+               console.log("Transaction Status => ", statusData);
+               window.Paytm.CheckoutJS.close();
+               
+               // Redirect to verify endpoint (The data is already in DB)
+               const form = document.createElement('form');
+               form.action = '/api/verify-payment';
+               form.method = 'POST';
+               
+               // Essential Paytm identifiers
+               const orderInput = document.createElement('input');
+               orderInput.type = 'hidden';
+               orderInput.name = 'ORDERID';
+               orderInput.value = data.orderId;
+               form.appendChild(orderInput);
+               
+               document.body.appendChild(form);
+               form.submit();
+            }
+          }
+        };
 
-      document.body.appendChild(paytmForm);
-      paytmForm.submit();
+        if (window.Paytm && window.Paytm.CheckoutJS) {
+          window.Paytm.CheckoutJS.onLoad(function executeAfterCompleteLoad() {
+            window.Paytm.CheckoutJS.init(config).then(function onSuccess() {
+              window.Paytm.CheckoutJS.invoke();
+            }).catch(function onError(error: any) {
+              console.error("Paytm init error => ", error);
+              setIsProcessing(false);
+            });
+          });
+        }
+      } catch (scriptErr) {
+        console.error("Script load error:", scriptErr);
+        setIsProcessing(false);
+      }
 
     } catch (err) {
       console.error(err);
@@ -117,6 +186,7 @@ export default function Home() {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <main className={styles.main}>
       {/* NAVBAR */}
       <nav className={styles.navbar}>
@@ -395,7 +465,7 @@ export default function Home() {
               </div>
 
               <button type="submit" className={`button-primary ${styles.submitBtn}`} disabled={isProcessing}>
-                {isProcessing ? "Processing via Razorpay..." : (
+                {isProcessing ? "Processing..." : (
                   <>Buy Tickets Now <ArrowRight size={20} /></>
                 )}
               </button>
@@ -431,5 +501,6 @@ export default function Home() {
         </div>
       </footer>
     </main>
+    </Suspense>
   );
 }
