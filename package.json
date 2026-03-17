@@ -23,7 +23,8 @@
     "paytmchecksum": "^1.5.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "twilio": "^5.13.0"
   },
   "devDependencies": {
     "@types/cookie": "^0.6.0",

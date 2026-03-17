@@ -72,16 +72,23 @@ function CheckoutContent() {
         return;
       }
 
-      const scriptUrl = `https://securestage.paytmpayments.com/merchantpgpui/checkoutjs/merchants/${data.mid}.js`;
+      const host = data.host || 'https://securestage.paytmpayments.com';
+      const cleanHost = host.endsWith('/') ? host.slice(0, -1) : host;
+      const scriptUrl = `${cleanHost}/merchantpgpui/checkoutjs/merchants/${data.mid}.js`;
 
       const loadScript = () => {
         return new Promise((resolve, reject) => {
+          // Check if already loaded
+          if (window.Paytm && window.Paytm.CheckoutJS) {
+            resolve(true);
+            return;
+          }
           const script = document.createElement("script");
           script.type = "application/javascript";
           script.src = scriptUrl;
           script.crossOrigin = "anonymous";
           script.onload = () => resolve(true);
-          script.onerror = () => reject(new Error("Failed to load Paytm SDK"));
+          script.onerror = () => reject(new Error(`Failed to load Paytm SDK from ${scriptUrl}`));
           document.body.appendChild(script);
         });
       };

@@ -644,7 +644,7 @@ export default function Home() {
           </div>
           <div className={styles.footerDivider} />
           <div className={styles.footerCopyright}>
-            Team Innovation &copy; {new Date().getFullYear()}. All Rights Reserved.
+            HuboEvent &copy; {new Date().getFullYear()}. All Rights Reserved.
           </div>
         </footer>
       </main>
