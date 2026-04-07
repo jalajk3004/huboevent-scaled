@@ -24,11 +24,8 @@ export async function POST(req: Request) {
                 name: ticketData.name,
                 email: ticketData.email,
                 phone: ticketData.phone,
-                event: ticketData.event,
-                type: ticketData.type,
-                address: ticketData.address,
-                category: ticketData.category,
-                quantity: 1,
+                address: ticketData.address || 'NA',
+                category: ticketData.category || 'NA',
                 amount: amount,
                 status: 'initiated',
                 razorpay_order_id: null // Will be updated below with its own ID

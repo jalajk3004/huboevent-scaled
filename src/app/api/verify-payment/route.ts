@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 // @ts-expect-error - paytmchecksum is not typed
 import PaytmChecksum from 'paytmchecksum';
-import nodemailer from 'nodemailer';
+import { sendTicketEmail } from '@/lib/email';
 import { supabase } from '@/lib/supabase';
 import { sendWhatsAppTicket } from '@/lib/whatsapp';
 
@@ -121,35 +121,6 @@ export async function POST(req: Request) {
 
         // Send Email & WhatsApp only on success
         try {
-            const transporter = nodemailer.createTransport({
-                host: process.env.EMAIL_HOST || "smtp.gmail.com",
-                port: parseInt(process.env.EMAIL_PORT || "587"),
-                secure: false,
-                auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-            });
-
-            const mailOptions = {
-                from: `"HubO Events" <${process.env.EMAIL_USER}>`,
-                to: ticketData.email,
-                subject: `Your Tickets for ${ticketData.event.replace('-', ' ').toUpperCase()} 🎉`,
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
-                        <h1 style="color: #f70a7d; text-align: center;">HUBO EVENTS</h1>
-                        <h2 style="text-align: center;">Payment Successful!</h2>
-                        <p>Hi <b>${ticketData.name}</b>,</p>
-                        <p>Your payment of <b>₹${amount}</b> was successful!</p>
-                        <div style="background: #fdfdfd; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #ccc;">
-                            <h3>Ticket Details</h3>
-                            <p><b>Event:</b> ${ticketData.event.replace('-', ' ').toUpperCase()}</p>
-                            <p><b>Category:</b> ${ticketData.category}</p>
-                            <p><b>Type:</b> ${ticketData.type.toUpperCase()}</p>
-                            <p><b>Ticket ID:</b> ${registration.id}</p>
-                        </div>
-                        <p style="margin-top: 30px;">Present this email at the venue entrance. See you there!</p>
-                    </div>
-                `
-            };
-
             const eventDetails: Record<string, { date: string, time: string, venue: string }> = {
                 'neon-nights': { date: 'Oct 15, 2026', time: '08:00 PM', venue: 'Mumbai Arena' },
                 'rhythm-project': { date: 'Nov 02, 2026', time: '07:00 PM', venue: 'Delhi State' },
@@ -159,7 +130,7 @@ export async function POST(req: Request) {
             const eventInfo = eventDetails[ticketData.event] || { date: 'TBD', time: 'TBD', venue: 'TBD' };
 
             await Promise.allSettled([
-                transporter.sendMail(mailOptions),
+                sendTicketEmail(ticketData.email, ticketData, amount, registration.id),
                 sendWhatsAppTicket(ticketData.phone, {
                     name: ticketData.name,
                     event: ticketData.event,
