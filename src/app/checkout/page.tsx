@@ -1,11 +1,8 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Image from "next/image";
 import { useSearchParams, useRouter } from 'next/navigation';
-import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, MapPin, Mail, Smartphone } from "lucide-react";
-import styles from "../page.module.css";
+import { ShieldCheck, Smartphone } from "lucide-react";
 
 // Extend window interface to recognize Paytm
 declare global {
@@ -19,10 +16,8 @@ function CheckoutContent() {
     name: "",
     email: "",
     phone: "",
-    event: "neon-nights",
-    type: "general",
-    address: "",
-    category: "Dance"
+    category: "Music",
+    address: ""
   });
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,18 +39,12 @@ function CheckoutContent() {
     }
   }, [searchParams, router]);
 
-  const TICKET_PRICES: Record<string, number> = {
-    general: 1,
-    vip: 1,
-    earlyBird: 1
-  };
-
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
     try {
-      const amount = Math.round(TICKET_PRICES[ticketData.type]);
+      const amount = 800;
 
       const res = await fetch('/api/create-order', {
         method: 'POST',
@@ -77,7 +66,6 @@ function CheckoutContent() {
 
       const loadScript = () => {
         return new Promise((resolve, reject) => {
-          // Check if already loaded
           if (window.Paytm && window.Paytm.CheckoutJS) {
             resolve(true);
             return;
@@ -155,95 +143,145 @@ function CheckoutContent() {
   };
 
   return (
-    <main className={styles.main} style={{ background: '#05020a', minHeight: '100vh', padding: '100px 5%' }}>
-      <nav className={styles.navbar}>
-        <div className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>
-          <div className={styles.logoIcon}><span>H</span></div>
-          <div className={styles.logoTextContainer}>
-            <span className={styles.logoTitle}>HUBO EVENTS</span>
-            <span className={styles.logoSubtitle}>NIGHTLIFE / ENTERTAINMENT</span>
+    <main className="min-h-screen bg-[#05020a] text-white flex flex-col items-center pt-32 pb-12 px-4 md:px-8 font-sans relative w-full">
+      <nav className="absolute top-0 left-0 w-full p-6 flex justify-start z-10 md:px-12 bg-[#05020a]/80 backdrop-blur-sm border-b border-[#16121E]">
+        <div onClick={() => router.push('/')} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-lg font-bold text-white shadow-lg">
+            H
+          </div>
+          <div className="flex flex-col">
+            <span className="font-black text-xl tracking-wider text-white uppercase leading-none">HUBO EVENTS</span>
+            <span className="text-[10px] text-gray-400 tracking-[0.2em] font-medium mt-1">NIGHTLIFE / ENTERTAINMENT</span>
           </div>
         </div>
       </nav>
 
-      <div style={{ maxWidth: '800px', margin: '40px auto' }}>
-        <h1 style={{ 
-          fontSize: 'clamp(2.5rem, 5vw, 4rem)', 
-          fontWeight: 900, 
-          color: '#fff', 
-          marginBottom: '20px',
-          textAlign: 'center',
-          textTransform: 'uppercase'
-        }}>Checkout</h1>
-        
-        <div className={styles.paymentSection} style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(10px)' }}>
-          {ticketStatus === "success" ? (
-            <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-              <div style={{ width: '80px', height: '80px', background: '#00ffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#000' }}>
-                <ShieldCheck size={40} />
-              </div>
-              <h3 style={{ fontSize: '2rem', marginBottom: '15px', color: '#00ffff' }}>Payment Successful!</h3>
-              <p style={{ color: '#aaa', fontSize: '1.2rem', marginBottom: '30px' }}>
-                Your registration is confirmed. We have sent the tickets to your registered email address and WhatsApp.
-              </p>
-              <button className="button-primary" onClick={() => router.push('/')}>
-                Back to Home
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handlePayment}>
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label>Full Name</label>
-                  <input type="text" required placeholder="John Doe" value={ticketData.name} onChange={e => setTicketData({ ...ticketData, name: e.target.value })} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Email Address</label>
-                  <input type="email" required placeholder="john@example.com" value={ticketData.email} onChange={e => setTicketData({ ...ticketData, email: e.target.value })} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Phone Number</label>
-                  <input type="tel" required placeholder="+91 98765 43210" value={ticketData.phone} onChange={e => setTicketData({ ...ticketData, phone: e.target.value })} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Select Event</label>
-                  <select value={ticketData.event} onChange={e => setTicketData({ ...ticketData, event: e.target.value })}>
-                    <option value="neon-nights">Neon Nights Festival - Oct 15</option>
-                  </select>
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Category</label>
-                  <select value={ticketData.category} onChange={e => setTicketData({ ...ticketData, category: e.target.value })}>
-                    <option value="Dance">Dance</option>
-                    <option value="Singing">Singing</option>
-                    <option value="Dialogue Mimicry">Dialogue Mimicry</option>
-                  </select>
-                </div>
-                <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-                  <label>Full Address</label>
-                  <textarea required placeholder="123 Street Name, City, State" value={ticketData.address} onChange={e => setTicketData({ ...ticketData, address: e.target.value })} className={styles.textareaCustom} style={{ width: '100%', minHeight: '100px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#fff', padding: '15px' }}></textarea>
-                </div>
-              </div>
-
-              <div className={styles.ticketSummary}>
-                <div className={styles.summaryRow}>
-                  <span>1x Ticket Registration</span>
-                  <span>₹{TICKET_PRICES[ticketData.type]}</span>
-                </div>
-                <div className={`${styles.summaryRow} ${styles.total}`}>
-                  <span>Total Payable</span>
-                  <span>₹{Math.round(TICKET_PRICES[ticketData.type])}</span>
-                </div>
-              </div>
-
-              <button type="submit" className={`button-primary ${styles.submitBtn}`} disabled={isProcessing}>
-                {isProcessing ? "Redirecting to Paytm..." : (
-                  <>Proceed to Payment <ArrowRight size={20} /></>
-                )}
-              </button>
-            </form>
-          )}
+      {ticketStatus !== "success" && (
+        <div className="flex flex-col items-center text-center mb-8 w-full max-w-2xl mt-auto pt-8">
+           <h1 className="text-4xl md:text-5xl font-black uppercase leading-tight flex flex-wrap items-center justify-center gap-x-3 gap-y-2 mb-4">
+             <span style={{ background: 'linear-gradient(135deg, #ffffff 0%, #e0aaff 35%, #00ffff 65%, #ffffff 100%)', backgroundSize: '200% 200%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+               DHURANDHAR
+             </span>
+             <span style={{ background: 'linear-gradient(135deg, #ffffff 0%, #ff2a85 35%, #e0aaff 65%, #ffffff 100%)', backgroundSize: '200% 200%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+               INSTA KE
+             </span>
+           </h1>
+           <p className="text-gray-400 font-medium text-lg tracking-wider uppercase">
+             Organized by Hubo Events
+           </p>
         </div>
+      )}
+
+      <div className="w-full max-w-lg bg-[#0F0C15] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden mb-auto h-fit">
+        {ticketStatus === "success" ? (
+          <div className="text-center p-10">
+            <div className="w-20 h-20 bg-cyan-400 rounded-full flex items-center justify-center mx-auto mb-5 text-black">
+              <ShieldCheck size={40} />
+            </div>
+            <h3 className="text-2xl font-bold mb-4 text-cyan-400">Payment Successful!</h3>
+            <p className="text-gray-400 text-lg mb-8">
+              Your registration is confirmed. We have sent the tickets to your registered email address and WhatsApp.
+            </p>
+            <button 
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all"
+              onClick={() => router.push('/')}
+            >
+              Back to Home
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="p-6 md:p-8 border-b border-gray-800 bg-[#16121E]">
+              {/* Title moved to top container */}
+              <div className="mb-6 flex justify-center">
+                <p className="text-white flex items-center gap-2 text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-blue-900/40 py-3 px-6 rounded-xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+                   <span className="text-blue-400 animate-pulse">●</span> 
+                   <span className="text-gray-200 tracking-wide">Starting from</span>
+                   <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ml-1">10th May</span>
+                </p>
+              </div>
+              
+              <div className="flex items-center gap-4 bg-[#0a080f] p-4 rounded-xl border border-gray-800">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xl font-bold">
+                  H
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Hubo Events</h3>
+                  <p className="text-sm text-gray-400">Reserve your spot for INR 800 🚀</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handlePayment} className="p-6 md:p-8 space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Name <span className="text-red-500">*</span></label>
+                  <input type="text" required value={ticketData.name} onChange={e => setTicketData({ ...ticketData, name: e.target.value })} 
+                    className="w-full px-4 py-3 bg-[#0a080f] border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-600" placeholder="John Doe" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Email <span className="text-red-500">*</span></label>
+                  <input type="email" required value={ticketData.email} onChange={e => setTicketData({ ...ticketData, email: e.target.value })} 
+                    className="w-full px-4 py-3 bg-[#0a080f] border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-600" placeholder="john@example.com" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Whatsapp Number <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-lg">🇮🇳</span>
+                    </div>
+                    <input type="tel" required value={ticketData.phone} onChange={e => setTicketData({ ...ticketData, phone: e.target.value })} 
+                      className="w-full pl-10 px-4 py-3 bg-[#0a080f] border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-600" placeholder="+91 98765 43210" />
+                  </div>
+                  <p className="text-sm text-gray-400 mt-2 flex items-center gap-1">
+                    You will get updates on your <Smartphone size={14} className="text-green-500" /> WhatsApp
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Category <span className="text-red-500">*</span></label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {["Music", "Dancing", "Comedy/Mimicry"].map((cat) => (
+                      <div 
+                        key={cat}
+                        onClick={() => setTicketData({ ...ticketData, category: cat })}
+                        className={`cursor-pointer text-center px-4 py-3 rounded-xl border transition-all duration-300 select-none ${
+                          ticketData.category === cat 
+                            ? 'bg-blue-600/20 border-blue-500 text-blue-400 font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-[1.02]' 
+                            : 'bg-[#0a080f] border-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200 hover:bg-[#16121E]'
+                        }`}
+                      >
+                        {cat}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Address <span className="text-red-500">*</span></label>
+                  <textarea required value={ticketData.address} onChange={e => setTicketData({ ...ticketData, address: e.target.value })} 
+                    className="w-full px-4 py-3 bg-[#0a080f] border border-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder-gray-600 min-h-[100px]" placeholder="123 Street Name, City, State"></textarea>
+                </div>
+              </div>
+
+              <div className="pt-8">
+                <button type="submit" disabled={isProcessing}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20">
+                  {isProcessing ? "Redirecting to Payment..." : "Register Now at ₹800"}
+                </button>
+              </div>
+              
+              <div className="flex justify-center items-center gap-4 pt-4 border-t border-gray-800/50 opacity-60">
+                 <span className="text-xs font-semibold tracking-wider">UPI</span>
+                 <span className="text-xs font-semibold tracking-wider">VISA</span>
+                 <span className="text-xs font-semibold tracking-wider">MasterCard</span>
+                 <span className="text-xs font-semibold tracking-wider">RuPay</span>
+              </div>
+            </form>
+          </>
+        )}
       </div>
     </main>
   );
@@ -251,7 +289,7 @@ function CheckoutContent() {
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div style={{ background: '#05020a', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>Loading Checkout...</div>}>
+    <Suspense fallback={<div className="bg-[#05020a] min-h-screen flex items-center justify-center text-white">Loading Checkout...</div>}>
       <CheckoutContent />
     </Suspense>
   );

@@ -4,9 +4,9 @@ import { supabase } from '@/lib/supabase';
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, phone, event, type, aadhaar, address, category, amount } = body;
+        const { name, email, phone, event, type, address, category, amount } = body;
 
-        if (!name || !email || !phone || !event || !type || !aadhaar || !address || !category || !amount) {
+        if (!name || !email || !phone || !event || !type || !address || !category || !amount) {
             return NextResponse.json({ success: false, message: "Missing required fields" }, { status: 400 });
         }
 
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
                     phone,
                     event,
                     type,
-                    aadhaar,
                     address,
                     category,
                     amount,
