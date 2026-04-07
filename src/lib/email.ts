@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_build");
 
 export async function verifyEmailAddress(email: string) {
     console.log(`[Resend] Note: Resend does not have a direct single-email verification like SES. 
@@ -15,20 +15,81 @@ export async function sendTicketEmail(toEmail: string, ticketData: any, amount: 
     // The user should update RESEND_FROM_EMAIL to a verified domain.
 
     const htmlBody = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
-            <h1 style="color: #f70a7d; text-align: center;">HUBO EVENTS</h1>
-            <h2 style="text-align: center;">Payment Successful!</h2>
-            <p>Hi <b>${ticketData.name}</b>,</p>
-            <p>Your payment of <b>₹${amount}</b> was successful!</p>
-            <div style="background: #fdfdfd; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #ccc;">
-                <h3>Ticket Details</h3>
-                <p><b>Event:</b> ${ticketData.event.replace('-', ' ').toUpperCase()}</p>
-                <p><b>Category:</b> ${ticketData.category}</p>
-                <p><b>Type:</b> ${(ticketData.type || "").toUpperCase()}</p>
-                <p><b>Ticket ID:</b> ${registrationId}</p>
-            </div>
-            <p style="margin-top: 30px;">Present this email at the venue entrance. See you there!</p>
-        </div>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html dir="ltr" lang="en">
+  <head>
+    <meta content="width=device-width" name="viewport" />
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta
+      content="telephone=no,address=no,email=no,date=no,url=no"
+      name="format-detection" />
+  </head>
+  <body>
+    <table
+      border="0"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      role="presentation"
+      align="center">
+      <tbody>
+        <tr>
+          <td>
+            <table
+              align="center"
+              width="100%"
+              border="0"
+              cellpadding="0"
+              cellspacing="0"
+              role="presentation"
+              style="width:100%">
+              <tbody>
+                <tr style="width:100%">
+                  <td>
+                    <div
+                      style="margin:auto;padding:24px;max-width:600px;background:#ffffff;border-radius:10px">
+                      <h2 style="margin:0;padding:0;text-align:center">
+                        🎉 You're officially in, ${ticketData.name}! 🎉
+                      </h2>
+                      <p style="margin:0;padding:0;margin-top:10px;">
+                        Your tickets for Dhrundhar Insta ke have been
+                        successfully confirmed.
+                      </p>
+                      <hr style="width:100%;border:none;border-top:1px solid #eaeaea;margin:20px 0;" />
+                      <p style="margin:0;padding:0;margin-bottom:8px;">
+                        <strong>🎫 Ticket ID:</strong> ${registrationId}
+                      </p>
+                      <p style="margin:0;padding:0;margin-bottom:8px;">
+                        <strong>📍 Venue:</strong> HubOEvents Venue
+                      </p>
+                      <p style="margin:0;padding:0">
+                        <strong>📅 Date:</strong> 10th May
+                      </p>
+                      <hr style="width:100%;border:none;border-top:1px solid #eaeaea;margin:20px 0;" />
+                      <p style="margin:0;padding:0">
+                        Please keep this email handy for entry.
+                      </p>
+                      <p style="margin:0;padding:0;text-align:center;margin-top:20px">
+                        ✨ We can't wait to see you there!
+                      </p>
+                      <p style="margin:0;padding:0;text-align:center;font-size:12px;color:#888;margin-top:20px;">
+                        — Team HubOEvents
+                      </p>
+                    </div>
+                    <p style="margin:0;padding:0"><br /></p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
     `;
 
     try {
@@ -36,7 +97,7 @@ export async function sendTicketEmail(toEmail: string, ticketData: any, amount: 
         const { data, error } = await resend.emails.send({
             from: `HubO Events <${sourceEmail}>`,
             to: [toEmail],
-            subject: `Your Tickets for ${ticketData.event.replace('-', ' ').toUpperCase()} 🎉`,
+            subject: `Your Tickets for DHRUNDHAR INSTA KE 🎉`,
             html: htmlBody,
         });
 
