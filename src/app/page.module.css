@@ -397,60 +397,51 @@
 }
 
 .aboutRight {
-  flex: 0 0 45%;
+  flex: 0 0 40%;
   display: flex;
-  height: 100%;
-}
-
-.statPillar {
-  flex: 1;
-  height: 100%;
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  position: relative;
-  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 20px;
+  padding: 40px 5% 40px 3%;
 }
 
-.pillarDark {
-  background: rgba(10, 10, 10, 0.7);
-  backdrop-filter: blur(10px);
+.statCard {
+  background: rgba(10, 10, 10, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 28px 32px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
-.pillarPink {
-  background: rgba(214, 25, 101, 0.9);
+.statCard:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.pillarDarker {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
+.statCardPink {
+  background: rgba(214, 25, 101, 0.85);
+  border-color: rgba(255, 80, 150, 0.4);
 }
 
-.statContent {
-  color: #fff;
-  text-align: center;
-  transform: rotate(-90deg);
-  white-space: nowrap;
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-  gap: 30px;
-}
-
-.statContent h3 {
-  font-size: clamp(3rem, 5vw, 5rem);
-  font-weight: 900;
-  margin: 0;
-}
-
-.statContent p {
+.statCardLabel {
   font-family: var(--font-inter);
-  font-size: 1.2rem;
-  letter-spacing: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 3px;
   text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 0 8px;
+}
+
+.statCardValue {
+  font-family: var(--font-outfit);
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  font-weight: 900;
+  color: #fff;
   margin: 0;
-  color: rgba(255, 255, 255, 0.8);
-  text-align: left;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
 }
 
 /* Carousel Section */
@@ -1086,19 +1077,16 @@
   .aboutRight {
     flex-direction: column;
     height: auto;
+    padding: 0 5% 40px;
+    gap: 16px;
   }
 
-  .statPillar {
-    width: 100%;
-    height: 150px;
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  .statCard {
+    padding: 22px 24px;
   }
 
-  .statContent {
-    transform: none;
-    flex-direction: row;
-    justify-content: center;
+  .statCardValue {
+    font-size: 1.6rem;
   }
 
   .carouselContainer {

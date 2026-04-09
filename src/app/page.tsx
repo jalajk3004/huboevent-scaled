@@ -381,13 +381,18 @@ export default function Home() {
             <a href="#about" className={styles.navLink}>About Us</a>
           </div>
 
-          <div className={styles.logo}>
-            <div className={styles.logoIcon}>
-              <span>H</span>
-            </div>
-            <div className={styles.logoTextContainer}>
-              <span className={styles.logoTitle}>HUBO EVENTS</span>
-              <span className={styles.logoSubtitle}>NIGHTLIFE / ENTERTAINMENT</span>
+          <div className={styles.logo} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Image
+              src="/hubologo.png"
+              alt="Hubo Events Logo"
+              width={220}
+              height={80}
+              style={{ objectFit: 'contain', height: '70px', width: 'auto' }}
+              priority
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-outfit)', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '3px', textTransform: 'uppercase', color: '#ffffff' }}>HUBO EVENTS</span>
+              <span style={{ fontFamily: 'var(--font-outfit)', fontWeight: 500, fontSize: '0.6rem', letterSpacing: '2px', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginTop: '3px' }}>NIGHTLIFE / ENTERTAINMENT</span>
             </div>
           </div>
 
@@ -430,15 +435,17 @@ export default function Home() {
           </div>
 
           <div className={styles.aboutGrid}>
+            {/* LEFT — Brand name */}
             <div className={styles.aboutLeft}>
               <h2 className={styles.aboutTitle}>
                 HUBO <br />EVENTS
               </h2>
               <p className={styles.aboutSubtitle}>
-                THE MASTERMIND BEHIND INNOVATIVE NIGHTLIFE EXPERIENCES
+                DESIGNED FOR IMPACT. BUILT FOR THE BIG STAGE.
               </p>
             </div>
 
+            {/* CENTER — Spinning circle */}
             <div className={styles.aboutCenter}>
               <div className={styles.circleContainer}>
                 <div className={styles.circleTextWrapper}>
@@ -455,24 +462,15 @@ export default function Home() {
               </div>
             </div>
 
+            {/* RIGHT — Stat cards (no rotation) */}
             <div className={styles.aboutRight}>
-              <div className={`${styles.statPillar} ${styles.pillarDark}`}>
-                <div className={styles.statContent}>
-                  <p>CELEBRITY<br />EVENTS</p>
-                  <h3>100+</h3>
-                </div>
+              <div className={styles.statCard}>
+                <p className={styles.statCardLabel}>NATIONAL LEVEL SHOW</p>
+                <h3 className={styles.statCardValue}>IN PRODUCTION</h3>
               </div>
-              <div className={`${styles.statPillar} ${styles.pillarPink}`}>
-                <div className={styles.statContent}>
-                  <p>REACH</p>
-                  <h3>350M+</h3>
-                </div>
-              </div>
-              <div className={`${styles.statPillar} ${styles.pillarDarker}`}>
-                <div className={styles.statContent}>
-                  <p>FOLLOWERS</p>
-                  <h3>60k</h3>
-                </div>
+              <div className={`${styles.statCard} ${styles.statCardPink}`}>
+                <p className={styles.statCardLabel}>PRIZE POOL</p>
+                <h3 className={styles.statCardValue}>₹1,00,000</h3>
               </div>
             </div>
           </div>
@@ -493,9 +491,9 @@ export default function Home() {
           borderBottom: '1px solid var(--glass-border)'
         }}>
           <h3 style={{
-            fontFamily: 'var(--font-outfit)', 
-            fontSize: 'clamp(1.8rem, 5vw, 3rem)', 
-            fontWeight: 800, 
+            fontFamily: 'var(--font-outfit)',
+            fontSize: 'clamp(1.8rem, 5vw, 3rem)',
+            fontWeight: 800,
             letterSpacing: '6px',
             textTransform: 'uppercase',
             color: '#ffffff',
@@ -504,13 +502,13 @@ export default function Home() {
           }}>
             Organized By Monica Gulati
           </h3>
-          
+
           {/* Glowing Placeholder Image */}
           <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-full" style={{ padding: '3px' }}>
             <div className="rgb-border-glow rounded-full" style={{ opacity: 0.3, filter: 'blur(8px)' }} />
             <div className="rgb-border-wrapper rounded-full" style={{ opacity: 0.5 }} />
-            
-            <div 
+
+            <div
               className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center z-10"
               style={{
                 background: 'linear-gradient(135deg, rgba(20,20,30,0.8), rgba(5,5,10,0.9))',
@@ -518,9 +516,9 @@ export default function Home() {
                 boxShadow: 'inset 0 0 30px rgba(0,0,0,0.8)'
               }}
             >
-              <span style={{ 
-                fontFamily: 'var(--font-outfit)', 
-                letterSpacing: '3px', 
+              <span style={{
+                fontFamily: 'var(--font-outfit)',
+                letterSpacing: '3px',
                 color: 'rgba(255,255,255,0.4)',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -591,35 +589,83 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 6. PAST EVENTS GALLERY */}
+        {/* 6. ABOUT THE EVENT */}
         <section className={styles.gallerySection} id="gallery">
           <div className={styles.galleryHeader}>
-            <h2 className={styles.galleryTitle}>100,000 SMILES CAPTURED AT OUR EVENTS</h2>
+            <h2 className={styles.galleryTitle}>WHAT IS DHURANDHAR INSTA KE?</h2>
             <p className={styles.galleryDesc}>
-              showcases the passion, energy, and unforgettable experiences we&apos;ve created with every event. From electrifying performances to seamless execution, each moment tells a story of collaboration and creativity, bringing together the finest artists and audiences.
+              India&apos;s biggest national talent showdown is here. Performers from every corner of the country come together to compete in <strong>Dance, Music, Comedy &amp; Mimicry</strong> — live on one electrifying stage. Whether you&apos;re a trained artist or a raw talent waiting to be discovered, this is your moment to shine.
             </p>
           </div>
-          <div className={styles.galleryGridNew}>
-            <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop" alt="Past Event 1" />
-            <img src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=800&auto=format&fit=crop" alt="Past Event 2" />
-            <img src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=800&auto=format&fit=crop" alt="Past Event 3" />
-          </div>
-        </section>
 
-
-
-        {/* 8. PARTNER BRANDS */}
-        <section className={styles.brandsSection}>
-          <div className={styles.brandsMarquee}>
-            {[...Array(2)].map((_, i) => (
-              <div key={i} style={{ display: 'inline-block' }}>
-                {["Redbull", "Spotify", "BookMyShow", "MTV", "VH1", "Sunburn", "Tomorrowland", "Smirnoff"].map((brand, idx) => (
-                  <span key={idx} className={styles.brandItem}>{brand}</span>
-                ))}
+          {/* Talent Category Cards */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '24px',
+            padding: '0 5%',
+            marginBottom: '60px'
+          }}>
+            {[
+              { emoji: '🕺', label: 'Dance', desc: 'From classical to hip-hop, every style welcome.' },
+              { emoji: '🎤', label: 'Music', desc: 'Singers, rappers, instrumentalists — all genres.' },
+              { emoji: '😂', label: 'Comedy', desc: 'Make the crowd laugh and win them over.' },
+              { emoji: '🎭', label: 'Mimicry', desc: 'Impersonate and impress a national audience.' },
+            ].map(({ emoji, label, desc }) => (
+              <div key={label} style={{
+                background: 'linear-gradient(135deg, rgba(20,10,35,0.9), rgba(10,5,20,0.95))',
+                border: '1px solid rgba(138,43,226,0.25)',
+                borderRadius: '20px',
+                padding: '32px 24px',
+                textAlign: 'center',
+                boxShadow: '0 0 30px rgba(138,43,226,0.08)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+              }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-6px)';
+                  (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 40px rgba(138,43,226,0.25)';
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)';
+                  (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 30px rgba(138,43,226,0.08)';
+                }}
+              >
+                <div style={{ fontSize: '3rem', marginBottom: '14px' }}>{emoji}</div>
+                <h3 style={{ fontFamily: 'var(--font-outfit)', fontWeight: 800, fontSize: '1.3rem', color: '#fff', letterSpacing: '2px', marginBottom: '10px', textTransform: 'uppercase' }}>{label}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.6 }}>{desc}</p>
               </div>
             ))}
           </div>
+
+          {/* Cash Prize Banner */}
+          <div style={{
+            margin: '0 5% 60px',
+            padding: '40px 32px',
+            background: 'linear-gradient(135deg, rgba(255,42,133,0.12), rgba(138,43,226,0.15), rgba(0,255,255,0.08))',
+            border: '1px solid rgba(255,42,133,0.3)',
+            borderRadius: '24px',
+            textAlign: 'center',
+            boxShadow: '0 0 60px rgba(255,42,133,0.1)',
+          }}>
+            <p style={{ fontFamily: 'var(--font-outfit)', fontSize: '0.85rem', fontWeight: 600, letterSpacing: '4px', textTransform: 'uppercase', color: 'var(--accent-pink)', marginBottom: '12px' }}>Winners Take Home</p>
+            <h3 style={{ fontFamily: 'var(--font-outfit)', fontWeight: 900, fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: '#fff', letterSpacing: '2px', textShadow: '0 0 40px rgba(255,42,133,0.4)' }}>
+              CASH PRIZES 💰
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: '14px', fontSize: '1rem', maxWidth: '500px', margin: '14px auto 0' }}>
+              Top performers in each category compete for exciting cash prizes and national recognition. Your talent. Your stage. Your time.
+            </p>
+          </div>
+
+          <div className={styles.galleryGridNew}>
+            <img src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop" alt="Event Crowd" />
+            <img src="https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?q=80&w=800&auto=format&fit=crop" alt="Live Performance" />
+            <img src="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=800&auto=format&fit=crop" alt="Stage Energy" />
+          </div>
         </section>
+
+
+
+
 
         {/* 9. CONTACT SECTION */}
         <section className={`${styles.section} ${styles.tickets}`} id="tickets">
