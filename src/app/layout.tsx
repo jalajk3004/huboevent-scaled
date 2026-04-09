@@ -29,6 +29,16 @@ const fredoka = Fredoka({
 export const metadata: Metadata = {
   title: "HubO Events | Where Moments Become Experiences",
   description: "We create unforgettable concerts, nightlife experiences, and brand events that bring people together.",
+  icons: {
+    icon: "/hubologo.png",
+    shortcut: "/hubologo.png",
+    apple: "/hubologo.png",
+  },
+  openGraph: {
+    title: "HubO Events",
+    description: "Where Moments Become Experiences",
+    images: ["/hubologo.png"],
+  },
 };
 
 export const viewport = {

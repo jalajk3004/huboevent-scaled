@@ -120,29 +120,22 @@ export async function POST(req: Request) {
 
         // Send Email & WhatsApp only on success
         try {
-            const eventDetails: Record<string, { date: string, time: string, venue: string }> = {
-                'neon-nights': { date: 'Oct 15, 2026', time: '08:00 PM', venue: 'Mumbai Arena' },
-                'rhythm-project': { date: 'Nov 02, 2026', time: '07:00 PM', venue: 'Delhi State' },
-                'midnight-sun': { date: 'Dec 31, 2026', time: '09:00 PM', venue: 'Goa Beach Club' }
+            // Venue lookup — keyed by event slug stored in DB
+            const eventVenues: Record<string, string> = {
+                'neon-nights':    'Mumbai Arena',
+                'rhythm-project': 'Delhi State',
+                'midnight-sun':   'Goa Beach Club',
+                'dhurandhar':     'TBD',   // update when venue is confirmed
             };
 
-            const eventInfo = eventDetails[ticketData.event] || { date: 'TBD', time: 'TBD', venue: 'TBD' };
+            const venue = eventVenues[ticketData.event] || 'TBD';
 
-            await Promise.allSettled([
-                sendWhatsAppTicket(ticketData.phone, {
-                    name: ticketData.name,
-                    event: ticketData.event,
-                    category: ticketData.category,
-                    type: ticketData.type,
-                    quantity: 1,
-                    ticketId: registration.id,
-                    paymentId: TXNID || 'N/A',
-                    amount: amount,
-                    date: eventInfo.date,
-                    time: eventInfo.time,
-                    venue: eventInfo.venue
-                })
-            ]);
+            await sendWhatsAppTicket(ticketData.phone, {
+                name:     ticketData.name,
+                event:    ticketData.event,
+                ticketId: registration.id,
+                venue,
+            });
         } catch (msgErr) {
             console.error("Messaging error:", msgErr);
         }

@@ -24,27 +24,51 @@ export async function sendWhatsAppTicket(
   ticketDetails: TicketDetails
 ) {
   if (!accessToken || !phoneNumberId) {
-    console.warn("[WHATSAPP] Missing credentials");
+    console.warn("[WHATSAPP] Missing credentials — set META_WA_ACCESS_TOKEN and META_WA_PHONE_NUMBER_ID");
     return { success: false };
   }
 
   try {
-    // Clean phone number
-    const formattedPhone = phone.replace(/\D/g, "");
+    // Ensure phone is digits-only and has country code (default to India +91)
+    let formattedPhone = phone.replace(/\D/g, "");
+    if (!formattedPhone.startsWith("91") && formattedPhone.length === 10) {
+      formattedPhone = "91" + formattedPhone;
+    }
+
+    const { name, ticketId, venue = "TBD" } = ticketDetails;
 
     console.log(
-      `[WHATSAPP] Sending template to ${formattedPhone} using phoneNumberId ${phoneNumberId}`
+      `[WHATSAPP] Sending ticket_confirmation to +${formattedPhone} | name=${name} | ticketId=${ticketId} | venue=${venue}`
     );
 
+    /**
+     * Template: ticket_confirmation
+     * Body variables (in order):
+     *   {{1}} = name       → "Hello 🎉 You're officially in, {{name}}!"
+     *   {{2}} = ticket_id  → "Ticket ID: {{ticket_id}}"
+     *   {{3}} = venue      → "Venue: {{venue}}"
+     *
+     * Date "10th May 2026" is hardcoded in the template itself, so no variable needed.
+     */
     const payload = {
       messaging_product: "whatsapp",
       to: formattedPhone,
       type: "template",
       template: {
-        name: "hello_world",
+        name: "ticket_confirmation",
         language: {
-          code: "en_US",
+          code: "en",
         },
+        components: [
+          {
+            type: "body",
+            parameters: [
+              { type: "text", text: name },       // {{name}}
+              { type: "text", text: ticketId },   // {{ticket_id}}
+              { type: "text", text: venue },       // {{venue}}
+            ],
+          },
+        ],
       },
     };
 
@@ -58,8 +82,7 @@ export async function sendWhatsAppTicket(
     });
 
     const data = await response.json();
-
-    console.log("[WHATSAPP RESPONSE]", data);
+    console.log("[WHATSAPP RESPONSE]", JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       throw new Error(data.error?.message || "WhatsApp API Error");
