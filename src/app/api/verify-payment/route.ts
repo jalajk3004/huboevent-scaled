@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 // @ts-expect-error - paytmchecksum is not typed
 import PaytmChecksum from 'paytmchecksum';
-import { sendTicketEmail } from '@/lib/email';
 import { supabase } from '@/lib/supabase';
 import { sendWhatsAppTicket } from '@/lib/whatsapp';
 
@@ -130,7 +129,6 @@ export async function POST(req: Request) {
             const eventInfo = eventDetails[ticketData.event] || { date: 'TBD', time: 'TBD', venue: 'TBD' };
 
             await Promise.allSettled([
-                sendTicketEmail(ticketData.email, ticketData, amount, registration.id),
                 sendWhatsAppTicket(ticketData.phone, {
                     name: ticketData.name,
                     event: ticketData.event,
