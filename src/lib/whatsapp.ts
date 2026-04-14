@@ -63,9 +63,9 @@ export async function sendWhatsAppTicket(
           {
             type: "body",
             parameters: [
-              { type: "text", text: name },       // {{name}}
-              { type: "text", text: ticketId },   // {{ticket_id}}
-              { type: "text", text: venue },       // {{venue}}
+              { type: "text", parameter_name: "name", text: name },
+              { type: "text", parameter_name: "ticket_id", text: ticketId },
+              { type: "text", parameter_name: "venue", text: venue },
             ],
           },
         ],

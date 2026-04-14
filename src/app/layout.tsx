@@ -32,9 +32,11 @@ export const metadata: Metadata = {
   title: "HubO Events | Where Moments Become Experiences",
   description: "We create unforgettable concerts, nightlife experiences, and brand events that bring people together.",
   icons: {
-    icon: "/hubologo.png",
-    shortcut: "/hubologo.png",
-    apple: "/hubologo.png",
+    icon: [
+      { url: "/hubologo.png", type: "image/png" },
+    ],
+    shortcut: { url: "/hubologo.png", type: "image/png" },
+    apple: { url: "/hubologo.png", type: "image/png" },
   },
   openGraph: {
     title: "HubO Events",

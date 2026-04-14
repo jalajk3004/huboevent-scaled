@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-// @ts-expect-error - paytmchecksum is not typed
-import PaytmChecksum from 'paytmchecksum';
 import { supabase } from '@/lib/supabase';
+import PaytmChecksum from 'paytmchecksum';
 
 export async function POST(req: Request) {
     try {
@@ -16,8 +15,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Missing user details" }, { status: 400 });
         }
 
-        // 1. Create a "pending" entry in the database immediately
-        // This ensures data is saved before redirecting to Paytm
+        // 1. Generate IDs before database insertion
+        const tempId = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const friendlyTicketId = `HB-${tempId}`;
+        const orderId = `ORD_${tempId}_${Date.now()}`;
+
+        // 2. Create a registration entry in the database immediately (status: initiated)
         const { data: reg, error: regError } = await supabase
             .from('registrations')
             .insert([{
@@ -27,10 +30,11 @@ export async function POST(req: Request) {
                 address: ticketData.address || 'NA',
                 category: ticketData.category || 'NA',
                 amount: amount,
-                status: 'initiated',
-                razorpay_order_id: null // Will be updated below with its own ID
+                status: 'initiated', 
+                paytm_order_id: orderId, // Store Paytm Order ID here
+                paytm_payment_id: friendlyTicketId // Store HB-XXXX here
             }])
-            .select('id')
+            .select('id, name, paytm_order_id, paytm_payment_id')
             .single();
 
         if (regError || !reg) {
@@ -38,84 +42,71 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Failed to initiate registration" }, { status: 500 });
         }
 
-        // 2. Update the record to set razorpay_order_id to the registration ID
-        // This makes tracking easier as Paytm Order ID = Registration ID
-        const { error: updateError } = await supabase
-            .from('registrations')
-            .update({ razorpay_order_id: reg.id })
-            .eq('id', reg.id);
+        // 3. Initiate Paytm Transaction
+        const mid = process.env.PAYTM_MID;
+        const mkey = process.env.PAYTM_MERCHANT_KEY;
+        const website = process.env.PAYTM_WEBSITE || 'DEFAULT';
+        const host = process.env.PAYTM_HOST || 'https://securestage.paytmpayments.com';
 
-        if (updateError) {
-            console.error("Failed to update razorpay_order_id:", updateError);
+        if (!mid || !mkey) {
+            console.error("Missing Paytm credentials");
+            return NextResponse.json({ success: false, message: "Server configuration error" }, { status: 500 });
         }
 
-        const mid = process.env.PAYTM_MID!;
-        const mkey = process.env.PAYTM_MERCHANT_KEY!;
-        const website = process.env.PAYTM_WEBSITE!;
-        const host = process.env.PAYTM_HOST || 'https://securestage.paytmpayments.com';
-        
-        // Use registration ID as the Order ID
-        const orderId = reg.id;
-        const customerId = `CUST_${Date.now()}`;
+        const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/verify-payment`;
 
-        const paytmParams: any = {};
-        paytmParams.body = {
-            "requestType": "Payment",
-            "mid": mid,
-            "websiteName": website,
-            "orderId": orderId,
-            "callbackUrl": `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/verify-payment`,
-            "txnAmount": {
-                "value": amount.toString(),
-                "currency": "INR",
-            },
-            "userInfo": {
-                "custId": customerId,
-                "mobile": ticketData.phone,
-                "email": ticketData.email,
-                "firstName": ticketData.name
+        const paytmParams: any = {
+            body: {
+                requestType: "Payment",
+                mid: mid,
+                websiteName: website,
+                orderId: orderId,
+                callbackUrl: callbackUrl,
+                txnAmount: {
+                    value: amount.toString(),
+                    currency: "INR",
+                },
+                userInfo: {
+                    custId: ticketData.email.replace(/[^a-zA-Z0-9]/g, '_'),
+                    mobile: ticketData.phone,
+                    email: ticketData.email
+                },
             },
         };
 
         const checksum = await PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), mkey);
-        
-        paytmParams.head = {
-            "signature": checksum
-        };
+        paytmParams.head = { signature: checksum };
 
         const post_data = JSON.stringify(paytmParams);
+        const url = `${host}/theia/api/v1/initiateTransaction?mid=${mid}&orderId=${orderId}`;
 
-        // Call Paytm Initiate Transaction API
-        const response = await fetch(`${host}/theia/api/v1/initiateTransaction?mid=${mid}&orderId=${orderId}`, {
+        const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: post_data
         });
 
-        const data = await response.json();
+        const result = await response.json();
 
-        if (data && data.body && data.body.txnToken) {
+        if (result.body?.resultInfo?.resultStatus === 'S') {
             return NextResponse.json({
                 success: true,
                 orderId: orderId,
-                amount: Number(amount).toFixed(2),
-                txnToken: data.body.txnToken,
+                txnToken: result.body.txnToken,
                 mid: mid,
+                amount: amount.toString(),
                 host: host
             }, { status: 200 });
         } else {
-            console.error("Paytm Initiate Transaction Error:", JSON.stringify(data, null, 2));
-            return NextResponse.json({ 
-                success: false, 
-                message: "Failed to initiate Paytm transaction", 
-                details: data 
-            }, { status: 400 });
+            console.error("Paytm Initiation Failed:", result);
+            return NextResponse.json({
+                success: false,
+                message: result.body?.resultInfo?.resultMsg || "Payment initiation failed"
+            }, { status: 500 });
         }
 
     } catch (error) {
-        console.error("Create Order Error:", error);
+        console.error("Initiate Order Error:", error);
         return NextResponse.json({ success: false, message: "Internal server error" }, { status: 500 });
     }
 }
