@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ShieldCheck, Smartphone } from "lucide-react";
 
+
 // Extend window interface to recognize Paytm
 declare global {
   interface Window {

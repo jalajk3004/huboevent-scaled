@@ -48,15 +48,16 @@ export async function POST(req: Request) {
         const isSuccess = statusData?.body?.resultInfo?.resultStatus === 'TXN_SUCCESS';
 
         // 1. Fetch the existing record created during create-order
+        // We now look up by razorpay_order_id because the ORDERID coming from Paytm 
+        // matches the one we generated and stored there.
         const { data: registration, error: fetchError } = await supabase
             .from('registrations')
             .select('*')
-            .eq('id', ORDERID)
+            .eq('paytm_order_id', ORDERID)
             .single();
 
         if (fetchError || !registration) {
             console.error("No registration found for ORDERID:", ORDERID, fetchError);
-            // Fallback: If for some reason the row is missing, handle gracefully
             return NextResponse.redirect(new URL(`/checkout?payment=failed&msg=RegistrationNotFound`, req.url), { status: 303 });
         }
 
@@ -64,17 +65,15 @@ export async function POST(req: Request) {
             name: registration.name,
             email: registration.email,
             phone: registration.phone,
-            event: registration.event,
+            event: 'dhurandhar',
             category: registration.category,
-            type: registration.type,
-            aadhaar: registration.aadhaar,
             address: registration.address,
+            friendlyTicketId: registration.paytm_payment_id // This stored our HB-XXXX ID
         };
 
         // 2. Record the payment attempt in the 'payments' table
         const amount = TXNAMOUNT || statusData?.body?.txnAmount || registration.amount || '0';
         const finalStatus = isSuccess ? 'paid' : 'failed';
-        const paytmOrderId = ORDERID;
         const paytmTxnId = TXNID || statusData?.body?.txnId || 'N/A';
 
         console.log(`Recording payment for registration ${registration.id} with status: ${finalStatus}`);
@@ -83,7 +82,7 @@ export async function POST(req: Request) {
             .from('payments')
             .insert([{
                 registration_id: registration.id,
-                paytm_order_id: paytmOrderId,
+                paytm_order_id: ORDERID,
                 paytm_payment_id: paytmTxnId,
                 amount: amount,
                 status: finalStatus
@@ -91,7 +90,6 @@ export async function POST(req: Request) {
 
         if (paymentInsertError) {
             console.error("Failed to record payment entry:", JSON.stringify(paymentInsertError, null, 2));
-            // We continue even if this fails, as updating the registration is more critical
         }
 
         // 3. Update the registration status
@@ -101,16 +99,12 @@ export async function POST(req: Request) {
             .from('registrations')
             .update({
                 status: finalStatus,
-                razorpay_order_id: paytmOrderId, // Keep for backward compatibility/dashboard
-                razorpay_payment_id: paytmTxnId, // Keep for backward compatibility/dashboard
                 amount: amount
             })
             .eq('id', registration.id);
 
         if (updateError) {
             console.error("Database Update Error (Registrations):", JSON.stringify(updateError, null, 2));
-        } else {
-            console.log("Registration updated successfully for ID:", registration.id);
         }
 
         if (!isSuccess) {
@@ -118,23 +112,13 @@ export async function POST(req: Request) {
             return NextResponse.redirect(new URL(`/checkout?payment=failed&msg=${encodeURIComponent(msg)}`, req.url), { status: 303 });
         }
 
-        // Send Email & WhatsApp only on success
+        // Send WhatsApp only on success
         try {
-            // Venue lookup — keyed by event slug stored in DB
-            const eventVenues: Record<string, string> = {
-                'neon-nights':    'Mumbai Arena',
-                'rhythm-project': 'Delhi State',
-                'midnight-sun':   'Goa Beach Club',
-                'dhurandhar':     'TBD',   // update when venue is confirmed
-            };
-
-            const venue = eventVenues[ticketData.event] || 'TBD';
-
             await sendWhatsAppTicket(ticketData.phone, {
                 name:     ticketData.name,
-                event:    ticketData.event,
-                ticketId: registration.id,
-                venue,
+                event:    'dhurandhar',
+                ticketId: ticketData.friendlyTicketId || registration.id,
+                venue:    'lajpat',
             });
         } catch (msgErr) {
             console.error("Messaging error:", msgErr);
