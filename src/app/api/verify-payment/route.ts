@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-// @ts-expect-error - paytmchecksum is not typed
 import PaytmChecksum from 'paytmchecksum';
 import { supabase } from '@/lib/supabase';
 import { sendWhatsAppTicket } from '@/lib/whatsapp';
