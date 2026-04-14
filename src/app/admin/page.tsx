@@ -85,7 +85,7 @@ export default function AdminPage() {
                 setUsers(data.users);
             }
         } catch (e) {
-            console.error("Failed to fetch dashboard data");
+            console.error("Failed to fetch dashboard datas");
         }
     };
 
@@ -281,17 +281,17 @@ export default function AdminPage() {
                                             {(() => {
                                                 const hasPaidPayment = user.payments?.some(p => p.status === 'paid');
                                                 const effectiveStatus = hasPaidPayment ? 'paid' : user.status;
-                                                
+
                                                 return (
                                                     <span style={{
                                                         padding: '4px 8px',
                                                         borderRadius: '20px',
                                                         fontSize: '0.75rem',
                                                         fontWeight: 600,
-                                                        backgroundColor: effectiveStatus === 'paid' || effectiveStatus === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' : 
-                                                                         effectiveStatus === 'failed' || effectiveStatus === 'cancelled' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)',
-                                                        color: effectiveStatus === 'paid' || effectiveStatus === 'confirmed' ? '#4ade80' : 
-                                                               effectiveStatus === 'failed' || effectiveStatus === 'cancelled' ? '#ef4444' : '#facc15'
+                                                        backgroundColor: effectiveStatus === 'paid' || effectiveStatus === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' :
+                                                            effectiveStatus === 'failed' || effectiveStatus === 'cancelled' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)',
+                                                        color: effectiveStatus === 'paid' || effectiveStatus === 'confirmed' ? '#4ade80' :
+                                                            effectiveStatus === 'failed' || effectiveStatus === 'cancelled' ? '#ef4444' : '#facc15'
                                                     }}>
                                                         {effectiveStatus.toUpperCase()}
                                                     </span>
