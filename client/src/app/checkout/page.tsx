@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import Image from "next/image";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ShieldCheck, Smartphone } from "lucide-react";
 
-
-// Extend window interface to recognize Paytm
 declare global {
   interface Window {
-    Paytm: any;
+    Razorpay: new (options: Record<string, unknown>) => {
+      open(): void;
+      on(event: string, handler: (response: unknown) => void): void;
+    };
   }
 }
 
@@ -24,35 +25,21 @@ function CheckoutContent() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [ticketStatus, setTicketStatus] = useState<"idle" | "success" | "error">("idle");
-  const searchParams = useSearchParams();
   const router = useRouter();
-
-  useEffect(() => {
-    const paymentStatus = searchParams.get('payment');
-    const paymentMsg = searchParams.get('msg');
-
-    if (paymentStatus === 'success') {
-      setTicketStatus('success');
-      router.replace('/checkout?status=success');
-    } else if (paymentStatus === 'failed' || paymentStatus === 'error') {
-      alert(`Payment failed: ${paymentMsg || 'Unknown error. Please try again.'}`);
-      setTicketStatus('error');
-      router.replace('/checkout');
-    }
-  }, [searchParams, router]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
     try {
-      const amount = 800;
-
+      const amount = 800; // INR
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+      // 1. Create order on server
       const res = await fetch(`${apiUrl}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, ticketData })
+        body: JSON.stringify({ amount, ticketData }),
       });
 
       const data = await res.json();
@@ -63,83 +50,70 @@ function CheckoutContent() {
         return;
       }
 
-      const host = data.host || 'https://securestage.paytmpayments.com';
-      const cleanHost = host.endsWith('/') ? host.slice(0, -1) : host;
-      const scriptUrl = `${cleanHost}/merchantpgpui/checkoutjs/merchants/${data.mid}.js`;
+      // 2. Load Razorpay SDK
+      await new Promise<void>((resolve, reject) => {
+        if (window.Razorpay) { resolve(); return; }
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Razorpay SDK'));
+        document.body.appendChild(script);
+      });
 
-      const loadScript = () => {
-        return new Promise((resolve, reject) => {
-          if (window.Paytm && window.Paytm.CheckoutJS) {
-            resolve(true);
-            return;
+      // 3. Open Razorpay modal
+      const options: Record<string, unknown> = {
+        key: data.key,
+        amount: data.amount, // in paise
+        currency: 'INR',
+        name: 'Hubo Events',
+        description: 'Dhurandhar Insta Ke - Ticket',
+        order_id: data.orderId,
+        prefill: {
+          name: ticketData.name,
+          email: ticketData.email,
+          contact: ticketData.phone,
+        },
+        theme: { color: '#3b82f6' },
+        modal: {
+          ondismiss: () => {
+            setIsProcessing(false);
+          },
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            const verifyRes = await fetch(`${apiUrl}/api/verify-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(response),
+            });
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.success) {
+              setTicketStatus('success');
+            } else {
+              alert('Payment verification failed. Please contact support.');
+              setTicketStatus('error');
+            }
+          } catch {
+            alert('Payment verification error. Please contact support.');
+            setTicketStatus('error');
+          } finally {
+            setIsProcessing(false);
           }
-          const script = document.createElement("script");
-          script.type = "application/javascript";
-          script.src = scriptUrl;
-          script.crossOrigin = "anonymous";
-          script.onload = () => resolve(true);
-          script.onerror = () => reject(new Error(`Failed to load Paytm SDK from ${scriptUrl}`));
-          document.body.appendChild(script);
-        });
+        },
       };
 
-      try {
-        await loadScript();
-
-        const config = {
-          "root": "",
-          "flow": "CHECKOUT",
-          "data": {
-            "orderId": data.orderId,
-            "token": data.txnToken,
-            "tokenType": "TXN_TOKEN",
-            "amount": data.amount
-          },
-          "merchant": {
-            "mid": data.mid,
-            "redirect": true
-          },
-          "payMode": {
-            "labels": {},
-            "filter": { "exclude": [] },
-            "order": ["UPI", "CARD", "NB"]
-          },
-          "handler": {
-            "notifyMerchant": function (eventName: string, data: any) {
-              console.log("Paytm Notification => ", eventName, data);
-            },
-            "transactionStatus": function (statusData: any) {
-              window.Paytm.CheckoutJS.close();
-              const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-              const form = document.createElement('form');
-              // Points to Express backend — it verifies and redirects back to this frontend
-              form.action = `${apiUrl}/api/verify-payment`;
-              form.method = 'POST';
-              const orderInput = document.createElement('input');
-              orderInput.type = 'hidden';
-              orderInput.name = 'ORDERID';
-              orderInput.value = data.orderId;
-              form.appendChild(orderInput);
-              document.body.appendChild(form);
-              form.submit();
-            }
-          }
-        };
-
-        if (window.Paytm && window.Paytm.CheckoutJS) {
-          window.Paytm.CheckoutJS.onLoad(function executeAfterCompleteLoad() {
-            window.Paytm.CheckoutJS.init(config).then(function onSuccess() {
-              window.Paytm.CheckoutJS.invoke();
-            }).catch(function onError(error: any) {
-              console.error("Paytm init error", error);
-              setIsProcessing(false);
-            });
-          });
-        }
-      } catch (scriptErr) {
-        console.error("Script load error:", scriptErr);
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response: unknown) => {
+        const r = response as { error: { description: string } };
+        alert(`Payment failed: ${r.error?.description ?? 'Unknown error'}`);
         setIsProcessing(false);
-      }
+      });
+      rzp.open();
     } catch (err) {
       console.error(err);
       alert("An error occurred during payment processing.");
@@ -202,7 +176,6 @@ function CheckoutContent() {
         ) : (
           <>
             <div className="p-6 md:p-8 border-b border-gray-800 bg-[#16121E]">
-              {/* Title moved to top container */}
               <div className="mb-6 flex justify-center">
                 <p className="text-white flex items-center gap-2 text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-blue-900/40 py-3 px-6 rounded-xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                   <span className="text-blue-400 animate-pulse">●</span>
@@ -282,7 +255,7 @@ function CheckoutContent() {
               <div className="pt-8">
                 <button type="submit" disabled={isProcessing}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/20">
-                  {isProcessing ? "Redirecting to Payment..." : "Register Now at ₹800"}
+                  {isProcessing ? "Opening Payment..." : "Register Now at ₹800"}
                 </button>
               </div>
 

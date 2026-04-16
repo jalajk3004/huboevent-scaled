@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../services/prismaService';
-import { initiateTransaction, verifyOrderStatus } from '../services/paytmService';
+import { createRazorpayOrder, verifyPaymentSignature, verifyWebhookSignature } from '../services/razorpayService';
 import { sendWhatsAppTicket } from '../services/whatsappService';
 import config from '../config/env';
 
@@ -25,8 +25,10 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
     }
 
     const tempId = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const receipt = `ORD_${tempId}_${Date.now()}`;
     const friendlyTicketId = `HB-${tempId}`;
-    const orderId = `ORD_${tempId}_${Date.now()}`;
+
+    const razorpayOrder = await createRazorpayOrder(amount, receipt);
 
     await prisma.registration.create({
       data: {
@@ -37,167 +39,151 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
         category: ticketData.category ?? 'NA',
         amount,
         status: 'initiated',
-        paytm_order_id: orderId,
-        paytm_payment_id: friendlyTicketId,
+        paytm_order_id: razorpayOrder.id,   // stores razorpay order id
+        paytm_payment_id: friendlyTicketId, // friendly ticket id until payment completes
       },
     });
 
-    // Callback points back to THIS Express server
-    const callbackUrl = `${req.protocol}://${req.get('host')}/api/verify-payment`;
-
-    const { txnToken, mid, host } = await initiateTransaction({
-      orderId,
-      amount,
-      callbackUrl,
-      userInfo: {
-        custId: ticketData.email.replace(/[^a-zA-Z0-9]/g, '_'),
-        mobile: ticketData.phone,
-        email: ticketData.email,
-      },
+    res.status(200).json({
+      success: true,
+      orderId: razorpayOrder.id,
+      key: config.razorpay.keyId,
+      amount: razorpayOrder.amount, // in paise
     });
-
-    res.status(200).json({ success: true, orderId, txnToken, mid, amount: amount.toString(), host });
   } catch (err) {
     next(err);
   }
 }
 
 // ─────────────────────────────────────────────
-// POST /api/verify-payment  (Paytm form-POST callback)
+// POST /api/verify-payment  (called from client after Razorpay modal success)
 // ─────────────────────────────────────────────
 export async function verifyPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const body = req.body as Record<string, string>;
-    const { ORDERID, TXNID, TXNAMOUNT } = body;
-    const frontendUrl = config.frontendUrl;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body as {
+      razorpay_order_id: string;
+      razorpay_payment_id: string;
+      razorpay_signature: string;
+    };
 
-    if (!ORDERID) {
-      res.redirect(303, `${frontendUrl}/checkout?payment=failed&msg=MissingOrderID`);
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      res.status(400).json({ success: false, message: 'Missing payment details' });
       return;
     }
 
-    const { isSuccess, txnId, txnAmount, resultMsg } = await verifyOrderStatus(ORDERID);
+    const isValid = verifyPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature);
+
+    if (!isValid) {
+      res.status(400).json({ success: false, message: 'Invalid payment signature' });
+      return;
+    }
 
     const registration = await prisma.registration.findUnique({
-      where: { paytm_order_id: ORDERID },
+      where: { paytm_order_id: razorpay_order_id },
     });
 
     if (!registration) {
-      console.error('[verifyPayment] No registration for ORDERID:', ORDERID);
-      res.redirect(303, `${frontendUrl}/checkout?payment=failed&msg=RegistrationNotFound`);
+      res.status(404).json({ success: false, message: 'Registration not found' });
       return;
     }
-
-    const amount = parseFloat(TXNAMOUNT || txnAmount || registration.amount.toString() || '0');
-    const finalStatus = isSuccess ? 'paid' : 'failed';
-    const paytmTxnId = TXNID || txnId;
 
     await prisma.payment.create({
       data: {
         registration_id: registration.id,
-        paytm_order_id: ORDERID,
-        paytm_payment_id: paytmTxnId ?? null,
-        amount,
-        status: finalStatus,
+        paytm_order_id: razorpay_order_id,
+        paytm_payment_id: razorpay_payment_id,
+        amount: registration.amount,
+        status: 'paid',
       },
     }).catch((err: unknown) => console.error('[verifyPayment] Payment insert error:', err));
 
     await prisma.registration.update({
       where: { id: registration.id },
-      data: { status: finalStatus, amount },
+      data: { status: 'paid', paytm_payment_id: razorpay_payment_id },
     });
-
-    if (!isSuccess) {
-      res.redirect(303, `${frontendUrl}/checkout?payment=failed&msg=${encodeURIComponent(resultMsg)}`);
-      return;
-    }
 
     // Fire WhatsApp on success (non-blocking)
     sendWhatsAppTicket(registration.phone, {
       name: registration.name,
       event: 'dhurandhar',
-      ticketId: registration.paytm_payment_id ?? registration.id,
+      ticketId: razorpay_payment_id,
       venue: 'lajpat',
     }).catch((msgErr: unknown) => console.error('[verifyPayment] WhatsApp error:', msgErr));
 
-    res.redirect(303, `${frontendUrl}/checkout?payment=success`);
+    res.status(200).json({ success: true, message: 'Payment verified successfully' });
   } catch (err) {
-    const frontendUrl = config.frontendUrl;
-    console.error('[verifyPayment] Unexpected error:', err);
-    res.redirect(303, `${frontendUrl}/checkout?payment=error`);
+    next(err);
   }
 }
 
 // ─────────────────────────────────────────────
-// POST /api/webhook  (Paytm server-to-server)
+// POST /api/webhook  (Razorpay server-to-server, raw body required)
 // ─────────────────────────────────────────────
 export async function webhook(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const body = req.body as Record<string, string>;
-    const { ORDERID, TXNID } = body;
-    const orderId = ORDERID ?? body.orderId;
+    const signature = req.headers['x-razorpay-signature'] as string | undefined;
 
-    if (!orderId) {
-      res.status(400).json({ success: false, message: 'Missing Order ID' });
+    if (!signature) {
+      res.status(400).json({ success: false, message: 'Missing signature header' });
       return;
     }
 
-    const { isSuccess, txnId, txnAmount } = await verifyOrderStatus(orderId);
+    const isValid = verifyWebhookSignature(req.body as Buffer, signature);
 
-    const registration = await prisma.registration.findUnique({
-      where: { paytm_order_id: orderId },
-    });
-
-    if (!registration) {
-      console.error('[webhook] No registration for ORDERID:', orderId);
-      res.status(404).json({ success: false, message: 'Registration not found' });
+    if (!isValid) {
+      res.status(400).json({ success: false, message: 'Invalid webhook signature' });
       return;
     }
 
-    if (registration.status === 'paid' && isSuccess) {
-      res.status(200).json({ success: true, message: 'Webhook already processed' });
-      return;
-    }
+    const event = JSON.parse((req.body as Buffer).toString()) as {
+      event: string;
+      payload: { payment: { entity: { order_id: string; id: string; amount: number } } };
+    };
 
-    const amount = parseFloat(txnAmount || registration.amount.toString() || '0');
-    const finalStatus = isSuccess ? 'paid' : 'failed';
-    const paytmTxnId = txnId || TXNID || 'N/A';
+    if (event.event === 'payment.captured') {
+      const { order_id, id: paymentId, amount } = event.payload.payment.entity;
 
-    const existingPayment = await prisma.payment.findFirst({
-      where: {
-        registration_id: registration.id,
-        paytm_payment_id: paytmTxnId,
-      },
-      select: { id: true },
-    });
-
-    if (!existingPayment) {
-      await prisma.payment.create({
-        data: {
-          registration_id: registration.id,
-          paytm_order_id: orderId,
-          paytm_payment_id: paytmTxnId,
-          amount,
-          status: finalStatus,
-        },
+      const registration = await prisma.registration.findUnique({
+        where: { paytm_order_id: order_id },
       });
-    }
 
-    await prisma.registration.update({
-      where: { id: registration.id },
-      data: { status: finalStatus, amount },
-    });
+      // Acknowledge even if registration not found — avoid Razorpay retries
+      if (!registration || registration.status === 'paid') {
+        res.status(200).json({ success: true });
+        return;
+      }
 
-    if (isSuccess) {
+      const existingPayment = await prisma.payment.findFirst({
+        where: { registration_id: registration.id, paytm_payment_id: paymentId },
+        select: { id: true },
+      });
+
+      if (!existingPayment) {
+        await prisma.payment.create({
+          data: {
+            registration_id: registration.id,
+            paytm_order_id: order_id,
+            paytm_payment_id: paymentId,
+            amount: amount / 100, // paise → rupees
+            status: 'paid',
+          },
+        });
+      }
+
+      await prisma.registration.update({
+        where: { id: registration.id },
+        data: { status: 'paid', paytm_payment_id: paymentId },
+      });
+
       sendWhatsAppTicket(registration.phone, {
         name: registration.name,
         event: 'dhurandhar',
-        ticketId: registration.paytm_payment_id ?? registration.id,
+        ticketId: paymentId,
         venue: 'TBD',
       }).catch((msgErr: unknown) => console.error('[webhook] WhatsApp error:', msgErr));
     }
 
-    res.status(200).json({ success: true, message: 'Webhook processed successfully' });
+    res.status(200).json({ success: true });
   } catch (err) {
     next(err);
   }

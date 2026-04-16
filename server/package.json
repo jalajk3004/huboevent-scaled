@@ -26,7 +26,8 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",
     "paytmchecksum": "^1.5.1",
-    "prisma": "^6.19.3"
+    "prisma": "^6.19.3",
+    "razorpay": "^2.9.6"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.8",

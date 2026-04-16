@@ -26,8 +26,9 @@ app.use(
 );
 
 // ─── Body Parsers ─────────────────────────────────────────────────────────────
+// Raw body for Razorpay webhook signature verification (must come before json())
+app.use('/api/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
-// Also parse URL-encoded form POSTs (e.g. Paytm's verify-payment callback)
 app.use(express.urlencoded({ extended: true }));
 
 // ─── Cookie Parser ────────────────────────────────────────────────────────────
