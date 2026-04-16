@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Registration {
+  id               String    @id @default(uuid())
+  name             String
+  email            String
+  phone            String
+  address          String?   @default("NA")
+  category         String    @default("NA")
+  amount           Decimal   @default(0)
+  status           String    @default("initiated")
+  paytm_order_id   String?   @unique
+  paytm_payment_id String?
+  created_at       DateTime  @default(now())
+  payments         Payment[]
+
+  @@map("registrations")
+}
+
+model Payment {
+  id               String       @id @default(uuid())
+  registration_id  String
+  paytm_order_id   String?
+  paytm_payment_id String?
+  amount           Decimal
+  status           String
+  created_at       DateTime     @default(now())
+  registration     Registration @relation(fields: [registration_id], references: [id])
+
+  @@map("payments")
+}
