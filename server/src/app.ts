@@ -18,8 +18,13 @@ const app: Application = express();
 // Allow the Next.js frontend origin; credentials required for cookie-based auth
 app.use(
   cors({
-    origin: config.frontendUrl,
-    credentials: true, // allows cookie to be sent cross-origin
+    origin: [
+      'https://jayykayy.sbs',
+      'https://www.jayykayy.sbs',
+      'https://d2ve7lnplnj6nc.cloudfront.net',
+      'http://localhost:3000'
+    ],
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
