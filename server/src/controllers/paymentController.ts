@@ -40,7 +40,7 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
         amount,
         status: 'initiated',
         paytm_order_id: razorpayOrder.id,   // stores razorpay order id
-        paytm_payment_id: friendlyTicketId, // friendly ticket id until payment completes
+        ticket_id: friendlyTicketId,        // permanent friendly ticket ID (HB-XXXXXXXX)
       },
     });
 
@@ -106,7 +106,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
     sendWhatsAppTicket(registration.phone, {
       name: registration.name,
       event: 'dhurandhar',
-      ticketId: razorpay_payment_id,
+      ticketId: registration.ticket_id ?? razorpay_payment_id,
       venue: 'lajpat',
     }).catch((msgErr: unknown) => console.error('[verifyPayment] WhatsApp error:', msgErr));
 
@@ -178,7 +178,7 @@ export async function webhook(req: Request, res: Response, next: NextFunction): 
       sendWhatsAppTicket(registration.phone, {
         name: registration.name,
         event: 'dhurandhar',
-        ticketId: paymentId,
+        ticketId: registration.ticket_id ?? paymentId,
         venue: 'TBD',
       }).catch((msgErr: unknown) => console.error('[webhook] WhatsApp error:', msgErr));
     }

@@ -18,6 +18,7 @@ model Registration {
   status           String    @default("initiated")
   paytm_order_id   String?   @unique
   paytm_payment_id String?
+  ticket_id        String?   @unique
   created_at       DateTime  @default(now())
   payments         Payment[]
 

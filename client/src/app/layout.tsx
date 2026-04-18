@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Outfit, Geist, Pacifico, Fredoka } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Analytics } from "@vercel/analytics/next"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -61,8 +60,6 @@ export default function RootLayout({
     <html lang="en" className={cn("dark", "font-sans", geist.variable)}>
       <body className={`${inter.variable} ${outfit.variable} ${pacifico.variable} ${fredoka.variable} ${inter.className}`}>
         {children}
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   );

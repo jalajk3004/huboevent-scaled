@@ -8,14 +8,13 @@ type Registration = {
     name: string;
     email: string;
     phone: string;
-    event: string;
-    type?: string;
+    address: string | null;
     category: string;
-    quantity?: number;
     amount: number;
     status: string;
-    razorpay_order_id?: string;
-    razorpay_payment_id?: string;
+    ticket_id: string | null;
+    paytm_order_id: string | null;
+    paytm_payment_id: string | null;
     created_at: string;
     payments?: {
         paytm_payment_id: string;
@@ -44,8 +43,12 @@ export default function AdminPage() {
     const [stats, setStats] = useState<Stats | null>(null);
     const [users, setUsers] = useState<Registration[]>([]);
     const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "initiated" | "failed">("all");
+    const [currentPage, setCurrentPage] = useState(1);
     const [selectedUser, setSelectedUser] = useState<Registration | null>(null);
     const [resendingId, setResendingId] = useState<string | null>(null);
+
+    const PAGE_SIZE = 10;
 
     useEffect(() => {
         // Check if token exists by blindly fetching users. 
@@ -141,11 +144,27 @@ export default function AdminPage() {
         }
     };
 
-    const filteredUsers = users.filter(u =>
-        u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase()) ||
-        u.event.toLowerCase().includes(search.toLowerCase())
-    );
+    useEffect(() => { setCurrentPage(1); }, [search, statusFilter]);
+
+    const filteredUsers = users.filter(u => {
+        const matchesSearch =
+            u.name.toLowerCase().includes(search.toLowerCase()) ||
+            u.email.toLowerCase().includes(search.toLowerCase()) ||
+            (u.ticket_id ?? '').toLowerCase().includes(search.toLowerCase()) ||
+            u.category.toLowerCase().includes(search.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+    const paginatedUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+    const pageNumbers = (() => {
+        const delta = 2;
+        const start = Math.max(1, currentPage - delta);
+        const end = Math.min(totalPages, currentPage + delta);
+        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    })();
 
     if (isCheckingAuth) {
         return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000', color: '#fff' }}>Loading...</div>;
@@ -243,19 +262,32 @@ export default function AdminPage() {
 
                 {/* Users Table Section */}
                 <div style={{ backgroundColor: '#18181b', borderRadius: '12px', border: '1px solid #27272a', overflow: 'hidden' }}>
-                    <div style={{ padding: '20px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 500 }}>Recent Registrations</h2>
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ padding: '20px', borderBottom: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 500 }}>
+                            Recent Registrations
+                            <span style={{ marginLeft: '10px', fontSize: '0.85rem', fontWeight: 400, color: '#71717a' }}>({filteredUsers.length} results)</span>
+                        </h2>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             <div style={{ position: 'relative' }}>
-                                <Search size={16} color="#71717a" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                                <Search size={16} color="#71717a" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                                 <input
                                     type="text"
-                                    placeholder="Search users..."
+                                    placeholder="Search name, email, ticket ID..."
                                     value={search}
                                     onChange={e => setSearch(e.target.value)}
-                                    style={{ padding: '8px 12px 8px 36px', backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '6px', color: '#fff', outline: 'none', fontSize: '0.9rem' }}
+                                    style={{ padding: '8px 12px 8px 36px', backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '6px', color: '#fff', outline: 'none', fontSize: '0.9rem', width: '240px' }}
                                 />
                             </div>
+                            <select
+                                value={statusFilter}
+                                onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+                                style={{ padding: '8px 12px', backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '6px', color: '#e4e4e7', outline: 'none', fontSize: '0.9rem', cursor: 'pointer' }}
+                            >
+                                <option value="all">All Status</option>
+                                <option value="paid">Paid</option>
+                                <option value="initiated">Pending</option>
+                                <option value="failed">Failed</option>
+                            </select>
                             <button onClick={fetchDashboardData} style={{ background: '#27272a', border: 'none', color: '#e4e4e7', padding: '8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                                 <RefreshCw size={18} />
                             </button>
@@ -267,7 +299,7 @@ export default function AdminPage() {
                             <thead>
                                 <tr style={{ backgroundColor: '#09090b', color: '#a1a1aa' }}>
                                     <th style={{ padding: '16px 20px', fontWeight: 500 }}>Name</th>
-                                    <th style={{ padding: '16px 20px', fontWeight: 500 }}>Event</th>
+                                    <th style={{ padding: '16px 20px', fontWeight: 500 }}>Ticket ID</th>
                                     <th style={{ padding: '16px 20px', fontWeight: 500 }}>Category</th>
                                     <th style={{ padding: '16px 20px', fontWeight: 500 }}>Amount</th>
                                     <th style={{ padding: '16px 20px', fontWeight: 500 }}>Status</th>
@@ -276,15 +308,15 @@ export default function AdminPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredUsers.length === 0 ? (
+                                {paginatedUsers.length === 0 ? (
                                     <tr><td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#71717a' }}>No registrations found.</td></tr>
-                                ) : filteredUsers.map(user => (
+                                ) : paginatedUsers.map(user => (
                                     <tr key={user.id} style={{ borderTop: '1px solid #27272a', backgroundColor: selectedUser?.id === user.id ? '#27272a' : 'transparent', transition: 'background 0.2s' }}>
                                         <td style={{ padding: '16px 20px' }}>
                                             <div style={{ fontWeight: 500, color: '#fff' }}>{user.name}</div>
                                             <div style={{ color: '#a1a1aa', fontSize: '0.8rem' }}>{user.email}</div>
                                         </td>
-                                        <td style={{ padding: '16px 20px', color: '#e4e4e7' }}>{user.event.replace('-', ' ')}</td>
+                                        <td style={{ padding: '16px 20px', color: '#e4e4e7' }}>{user.ticket_id ?? '—'}</td>
                                         <td style={{ padding: '16px 20px', color: '#e4e4e7' }}>{user.category}</td>
                                         <td style={{ padding: '16px 20px', color: '#e4e4e7' }}>₹{user.amount}</td>
                                         <td style={{ padding: '16px 20px' }}>
@@ -319,6 +351,40 @@ export default function AdminPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div style={{ padding: '16px 20px', borderTop: '1px solid #27272a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                            <span style={{ color: '#71717a', fontSize: '0.85rem' }}>
+                                Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filteredUsers.length)}–{Math.min(currentPage * PAGE_SIZE, filteredUsers.length)} of {filteredUsers.length} results
+                            </span>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    style={{ padding: '6px 12px', backgroundColor: '#27272a', border: '1px solid #3f3f46', color: currentPage === 1 ? '#52525b' : '#e4e4e7', borderRadius: '6px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }}
+                                >
+                                    ← Prev
+                                </button>
+                                {pageNumbers.map(n => (
+                                    <button
+                                        key={n}
+                                        onClick={() => setCurrentPage(n)}
+                                        style={{ padding: '6px 10px', minWidth: '34px', backgroundColor: n === currentPage ? 'var(--accent-pink, #f70a7d)' : '#27272a', border: '1px solid ' + (n === currentPage ? 'var(--accent-pink, #f70a7d)' : '#3f3f46'), color: '#fff', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: n === currentPage ? 600 : 400 }}
+                                    >
+                                        {n}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    style={{ padding: '6px 12px', backgroundColor: '#27272a', border: '1px solid #3f3f46', color: currentPage === totalPages ? '#52525b' : '#e4e4e7', borderRadius: '6px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontSize: '0.85rem' }}
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
             </div>
@@ -337,19 +403,19 @@ export default function AdminPage() {
                             <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Email:</span> {selectedUser.email}</div>
                             <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Phone:</span> {selectedUser.phone}</div>
                             <div style={{ borderTop: '1px solid #27272a', margin: '10px 0' }} />
-                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Event:</span> {selectedUser.event}</div>
+                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Ticket ID:</span> <span style={{ color: '#22d3ee', fontWeight: 600 }}>{selectedUser.ticket_id ?? '—'}</span></div>
                             <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Category:</span> {selectedUser.category}</div>
-                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Quantity:</span> {selectedUser.quantity || 1}</div>
+                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Address:</span> {selectedUser.address ?? '—'}</div>
                             <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Amount:</span> ₹{selectedUser.amount}</div>
                             <div style={{ borderTop: '1px solid #27272a', margin: '10px 0' }} />
                             <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Status:</span> {selectedUser.status}</div>
-                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Order ID:</span> {selectedUser.razorpay_order_id || 'N/A'}</div>
-                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Payment ID:</span> {selectedUser.payments?.[0]?.paytm_payment_id || selectedUser.razorpay_payment_id || 'N/A'}</div>
+                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Order ID:</span> {selectedUser.paytm_order_id ?? 'N/A'}</div>
+                            <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Payment ID:</span> {selectedUser.payments?.[0]?.paytm_payment_id ?? selectedUser.paytm_payment_id ?? 'N/A'}</div>
                             <div><span style={{ color: '#71717a', width: '100px', display: 'inline-block' }}>Date:</span> {new Date(selectedUser.created_at).toLocaleString()}</div>
                         </div>
 
                         <div style={{ padding: '20px', borderTop: '1px solid #27272a', backgroundColor: '#09090b', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                            {selectedUser.status === 'confirmed' && (
+                            {selectedUser.status === 'paid' && (
                                 <button
                                     onClick={() => handleResendTicket(selectedUser.id)}
                                     disabled={resendingId === selectedUser.id}

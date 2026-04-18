@@ -14,8 +14,6 @@
     "@studio-freight/lenis": "^1.0.42",
     "@supabase/supabase-js": "^2.99.1",
     "@tailwindcss/postcss": "^4.2.1",
-    "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.13.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

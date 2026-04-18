@@ -66,7 +66,7 @@ function CheckoutContent() {
         amount: data.amount, // in paise
         currency: 'INR',
         name: 'Hubo Events',
-        description: 'Dhurandhar Insta Ke - Ticket',
+        description: 'Dhurandhar Insta Se - Ticket',
         order_id: data.orderId,
         prefill: {
           name: ticketData.name,
@@ -147,11 +147,11 @@ function CheckoutContent() {
               DHURANDHAR
             </span>
             <span style={{ background: 'linear-gradient(135deg, #ffffff 0%, #ff2a85 35%, #e0aaff 65%, #ffffff 100%)', backgroundSize: '200% 200%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              INSTA KE
+              INSTA SE
             </span>
           </h1>
           <p className="text-gray-400 font-medium text-lg tracking-wider uppercase">
-            Organized by Hubo Events
+            Organized by Monika Gulati
           </p>
         </div>
       )}
@@ -180,7 +180,7 @@ function CheckoutContent() {
                 <p className="text-white flex items-center gap-2 text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-900/40 via-purple-900/40 to-blue-900/40 py-3 px-6 rounded-xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                   <span className="text-blue-400 animate-pulse">●</span>
                   <span className="text-gray-200 tracking-wide">Starting from</span>
-                  <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ml-1">10th May</span>
+                  <span className="text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] ml-1">30th May</span>
                 </p>
               </div>
 
@@ -193,7 +193,7 @@ function CheckoutContent() {
                   style={{ objectFit: 'contain', height: '56px', width: 'auto' }}
                 />
                 <div>
-                  <h3 className="font-semibold text-lg">Hubo Events</h3>
+                  <h3 className="font-semibold text-lg">Monika Gulati</h3>
                   <p className="text-sm text-gray-400">Reserve your spot for INR 800 🚀</p>
                 </div>
               </div>
@@ -229,12 +229,12 @@ function CheckoutContent() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-3">Category <span className="text-red-500">*</span></label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {["Music", "Dancing", "Comedy/Mimicry"].map((cat) => (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {["Music", "Dancing", "Comedy & Mimicry", "Dialogue Delivery"].map((cat) => (
                       <div
                         key={cat}
                         onClick={() => setTicketData({ ...ticketData, category: cat })}
-                        className={`cursor-pointer text-center px-4 py-3 rounded-xl border transition-all duration-300 select-none ${ticketData.category === cat
+                        className={`cursor-pointer flex flex-col items-center justify-center text-center px-2 py-3 min-h-[48px] rounded-xl border transition-all duration-300 select-none break-words hyphens-auto text-[11px] sm:text-xs ${ticketData.category === cat
                           ? 'bg-blue-600/20 border-blue-500 text-blue-400 font-bold shadow-[0_0_15px_rgba(59,130,246,0.3)] scale-[1.02]'
                           : 'bg-[#0a080f] border-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200 hover:bg-[#16121E]'
                           }`}

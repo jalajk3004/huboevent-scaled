@@ -138,7 +138,7 @@ export async function resendTicket(req: Request, res: Response, next: NextFuncti
         name: user.name,
         event: 'dhurandhar',
         category: user.category,
-        ticketId: user.paytm_payment_id ?? user.id,
+        ticketId: user.ticket_id ?? user.paytm_payment_id ?? user.id,
         paymentId: user.paytm_payment_id ?? 'N/A',
         amount: user.amount?.toString() ?? 'N/A',
       }),
