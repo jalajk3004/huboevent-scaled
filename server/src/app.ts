@@ -19,6 +19,8 @@ const app: Application = express();
 app.use(
   cors({
     origin: [
+      'https://huboevents.in',
+      'https://www.huboevents.in',
       'https://jayykayy.sbs',
       'https://www.jayykayy.sbs',
       'https://d2ve7lnplnj6nc.cloudfront.net',
