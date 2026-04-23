@@ -1125,6 +1125,128 @@
   }
 }
 
+/* ─── Responsive Navbar ─────────────────────────────────────────────────── */
+
+.navLinksDesktop {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.hamburgerBtn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 4px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .navLinksDesktop {
+    display: none;
+  }
+
+  .hamburgerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Mobile slide-in drawer */
+.mobileOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  z-index: 500;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mobileDrawer {
+  width: 280px;
+  max-width: 85vw;
+  background: #0d0a14;
+  height: 100%;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  animation: drawerSlideIn 0.22s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes drawerSlideIn {
+  from { transform: translateX(100%); }
+  to  { transform: translateX(0); }
+}
+
+.drawerCloseBtn {
+  align-self: flex-end;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 4px;
+  line-height: 1;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+}
+
+.drawerCloseBtn:hover {
+  color: #fff;
+}
+
+.drawerLogo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+}
+
+.mobileNavLink {
+  display: block;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-outfit);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  transition: color 0.2s;
+}
+
+.mobileNavLink:hover {
+  color: var(--accent-pink);
+}
+
+.mobileBuyBtn {
+  margin-top: auto;
+  padding-top: 32px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-pink), #a020f0);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: var(--font-outfit);
+  box-shadow: 0 0 20px rgba(255, 42, 133, 0.35);
+  margin-top: auto;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+
 @media (max-width: 480px) {
   .headline {
     font-size: 2.8rem;

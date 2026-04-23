@@ -30,12 +30,12 @@ export default function ContactSection() {
             <div>
               <Mail size={32} style={{ color: 'var(--accent-blue)', marginBottom: '15px' }} />
               <h4 style={{ color: '#fff', marginBottom: '10px' }}>Email Us</h4>
-              <p style={{ color: '#aaa' }}>hubo@gmail.com</p>
+              <p style={{ color: '#aaa' }}>huboevents@gmail.com</p>
             </div>
             <div>
               <Smartphone size={32} style={{ color: '#4ade80', marginBottom: '15px' }} />
               <h4 style={{ color: '#fff', marginBottom: '10px' }}>Call Us</h4>
-              <p style={{ color: '#aaa' }}>+91 88514 21341</p>
+              <p style={{ color: '#aaa' }}>+91 8743007638</p>
             </div>
           </div>
         </motion.div>

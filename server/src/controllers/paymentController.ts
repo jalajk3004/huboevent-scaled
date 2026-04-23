@@ -107,7 +107,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
       name: registration.name,
       event: 'dhurandhar',
       ticketId: registration.ticket_id ?? razorpay_payment_id,
-      venue: 'lajpat',
+      venue: 'Pitampura',
     }).catch((msgErr: unknown) => console.error('[verifyPayment] WhatsApp error:', msgErr));
 
     res.status(200).json({ success: true, message: 'Payment verified successfully' });

@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.inner-footer-link:hover {
+  color: rgba(255,255,255,0.65) !important;
+}
+
 @keyframes shimmer {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
